@@ -4,7 +4,7 @@ namespace ResourceManagementLab;
 
 internal class Program
 {
-    private static async Task Main()
+    private static void Main()
     {
         string dataDirectory = Path.Combine(
             AppContext.BaseDirectory,
@@ -14,64 +14,37 @@ internal class Program
 
         string filePath = Path.Combine(dataDirectory, "sample.txt");
 
-        File.WriteAllText(filePath, "Hello from C#!\nResource management example.");
+        File.WriteAllText(filePath,
+            "Hello from C#!\nResource management example.");
 
-        Console.WriteLine("=== RESOURCE MANAGEMENT LAB — П2 ===");
+        Console.WriteLine("=== RESOURCE MANAGEMENT LAB — П1 ===");
         Console.WriteLine();
 
-        // Задания 5, 6, 7: FileStorage + повторный Dispose + использование после Dispose.
-        Console.WriteLine("1. FileStorage: Write/Read + Dispose");
-        using (var storage = new FileStorage(filePath))
-        {
-            storage.Write("Данные записаны через FileStorage.");
-            Console.WriteLine(storage.Read());
-        }
+        // Задание 1 / 3: без using.
+        Console.WriteLine("1. Чтение без using");
+        Console.WriteLine(FileReaderWithoutUsing.Read(filePath));
 
+        // Задание 1 / 3: с using.
         Console.WriteLine();
-        Console.WriteLine("2. Повторный Dispose");
-        var second = new FileStorage(filePath);
-        second.Dispose();
-        second.Dispose();
-        second.Dispose();
+        Console.WriteLine("2. Чтение с using");
+        Console.WriteLine(FileReaderWithUsing.Read(filePath));
 
+        // Задание 2: исключение внутри using.
         Console.WriteLine();
-        Console.WriteLine("3. Использование после Dispose");
+        Console.WriteLine("3. Исключение внутри using");
         try
         {
-            second.Read();
+            FileReaderWithUsing.ReadFileWithError(filePath);
         }
-        catch (ObjectDisposedException ex)
+        catch (InvalidOperationException ex)
         {
-            Console.WriteLine($"ObjectDisposedException: {ex.Message}");
+            Console.WriteLine($"Перехвачена ошибка: {ex.Message}");
         }
+        // Dispose() уже вызван, хотя исключение и было выброшено.
 
-        // Задание 8: владелец — вызывающий код, StreamReader не закрывает поток.
+        // Задание 4: поколения GC.
         Console.WriteLine();
-        Console.WriteLine("4. Владение ресурсом + leaveOpen");
-        using (var ownerStream = new FileStream(
-            filePath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite))
-        {
-            using (var reader = new StreamReader(ownerStream, leaveOpen: true))
-            {
-                string line = reader.ReadLine() ?? string.Empty;
-                Console.WriteLine($"Первая строка: {line}");
-            }
-
-            // Поток всё ещё открыт — им владеет вызывающий код.
-            Console.WriteLine($"Поток открыт: {ownerStream.CanRead}");
-        }
-
-        // Задание 10: IAsyncDisposable.
-        Console.WriteLine();
-        Console.WriteLine("5. AsyncFileStorage");
-        await using (var asyncStorage = new AsyncFileStorage(filePath))
-        {
-            await asyncStorage.WriteAsync("Данные через AsyncFileStorage.");
-            Console.WriteLine(await asyncStorage.ReadAsync());
-        }
+        MemoryDemo.Run();
 
         Console.WriteLine();
         Console.WriteLine("Работа программы завершена.");
